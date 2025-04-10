@@ -44,7 +44,7 @@ var prefix: String = ""
 ## Nodes will be named `"entity_" + name_property`. An entity's name should be unique, otherwise you may run into unexpected behavior.
 @export var name_property := ""
 
-func build_def_text(target_editor: FuncGodotFGDFile.FuncGodotTargetMapEditors = FuncGodotFGDFile.FuncGodotTargetMapEditors.TRENCHBROOM) -> String:
+func build_def_text() -> String:
 	# Class prefix
 	var res : String = prefix
 	
@@ -68,9 +68,6 @@ func build_def_text(target_editor: FuncGodotFGDFile.FuncGodotTargetMapEditors = 
 		if prefix == '@SolidClass':
 			if prop == "size" or prop == "model":
 				continue
-		
-		if prop == 'model' and target_editor != FuncGodotFGDFile.FuncGodotTargetMapEditors.TRENCHBROOM:
-			continue
 		
 		var value = meta_props[prop]
 		res += " " + prop + "("
@@ -180,10 +177,7 @@ func build_def_text(target_editor: FuncGodotFGDFile.FuncGodotTargetMapEditors = 
 				if value is Resource:
 					prop_val = value.resource_path
 					if value is Material:
-						if target_editor != FuncGodotFGDFile.FuncGodotTargetMapEditors.JACK:
 							prop_type = "material"
-						else:
-							prop_type = "shader"
 					elif value is Texture2D:
 						prop_type = "decal"
 					elif value is AudioStream:

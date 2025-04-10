@@ -4,13 +4,6 @@
 class_name FuncGodotFGDModelPointClass
 extends FuncGodotFGDPointClass
 
-enum TargetMapEditor {
-	GENERIC,
-	TRENCHBROOM
-}
-
-## Determines how model interprets [member scale_expression].
-@export var target_map_editor: TargetMapEditor = TargetMapEditor.GENERIC
 ## Display model export folder relative to the model folder set by [FuncGodotLocalConfig].
 @export var models_sub_folder : String = ""
 ## Scale expression applied to model. See the [TrenchBroom Documentation](https://trenchbroom.github.io/manual/latest/#display-models-for-entities) for more information.
@@ -36,7 +29,7 @@ enum TargetMapEditor {
 				file.store_string('')
 				file.close()
 
-func build_def_text(target_editor: FuncGodotFGDFile.FuncGodotTargetMapEditors = FuncGodotFGDFile.FuncGodotTargetMapEditors.TRENCHBROOM) -> String:
+func build_def_text() -> String:
 	_generate_model()
 	return super()
 
@@ -52,17 +45,14 @@ func _generate_model() -> void:
 		printerr("could not create gltf file")
 		return
 	node.queue_free()
-	if target_map_editor == TargetMapEditor.TRENCHBROOM:
-		const model_key: String = "model"
-		if scale_expression.is_empty():
-			meta_properties[model_key] = '"%s"' % _get_local_path()
-		else:
-			meta_properties[model_key] = '{"path": "%s", "scale": %s }' % [
-				_get_local_path(), 
-				scale_expression
-			]
+	const model_key: String = "model"
+	if scale_expression.is_empty():
+		meta_properties[model_key] = '"%s"' % _get_local_path()
 	else:
-		meta_properties["studio"] = '"%s"' % _get_local_path()
+		meta_properties[model_key] = '{"path": "%s", "scale": %s }' % [
+			_get_local_path(), 
+			scale_expression
+			]
 	
 	if generate_size_property:
 		meta_properties["size"] = _generate_size_from_aabb(gltf_state.meshes)
@@ -99,22 +89,6 @@ func _create_gltf_file(gltf_state: GLTFState, path: String, node: Node3D) -> boo
 	
 	node.rotate_y(deg_to_rad(-90))
 	
-	# With TrenchBroom we can specify a scale expression, but for other editors we need to scale our models manually.
-	if target_map_editor != TargetMapEditor.TRENCHBROOM:
-		var scale_factor: Vector3 = Vector3.ONE
-		if scale_expression.is_empty():
-			scale_factor *= FuncGodotLocalConfig.get_setting(FuncGodotLocalConfig.PROPERTY.DEFAULT_INVERSE_SCALE) as float
-		else:
-			if scale_expression.begins_with('\''):
-				var scale_arr := scale_expression.split_floats(' ', false)
-				if scale_arr.size() == 3:
-					scale_factor *= Vector3(scale_arr[0], scale_arr[1], scale_arr[2])
-			elif scale_expression.to_float() > 0:
-				scale_factor *= scale_expression.to_float()
-		if scale_factor.length() == 0:
-			scale_factor = Vector3.ONE # Don't let the node scale into oblivion!
-		node.scale *= scale_factor
-	
 	var error: Error = gltf_document.append_from_scene(node, gltf_state)
 	if error != Error.OK:
 		printerr("Failed appending to gltf document", error)
@@ -148,13 +122,12 @@ func _generate_size_from_aabb(meshes: Array[GLTFMesh]) -> AABB:
 	# Scale the size bounds to our scale factor
 	# Scale factor will need to be set if we decide to auto-generate our bounds
 	var scale_factor: Vector3 = Vector3.ONE
-	if target_map_editor == TargetMapEditor.TRENCHBROOM:
-		if scale_expression.begins_with('\''):
-			var scale_arr := scale_expression.split_floats(' ', false)
-			if scale_arr.size() == 3:
-				scale_factor *= Vector3(scale_arr[0], scale_arr[1], scale_arr[2])
-		elif scale_expression.to_float() > 0:
-			scale_factor *= scale_expression.to_float()
+	if scale_expression.begins_with('\''):
+		var scale_arr := scale_expression.split_floats(' ', false)
+		if scale_arr.size() == 3:
+			scale_factor *= Vector3(scale_arr[0], scale_arr[1], scale_arr[2])
+	elif scale_expression.to_float() > 0:
+		scale_factor *= scale_expression.to_float()
 	
 	size_prop.position *= scale_factor
 	size_prop.size *= scale_factor

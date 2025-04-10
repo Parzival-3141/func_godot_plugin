@@ -8,10 +8,8 @@ extends Resource
 enum PROPERTY {
 	FGD_OUTPUT_FOLDER,
 	TRENCHBROOM_GAME_CONFIG_FOLDER,
-	NETRADIANT_CUSTOM_GAMEPACKS_FOLDER,
 	MAP_EDITOR_GAME_PATH,
 	GAME_PATH_MODELS_FOLDER,
-	DEFAULT_INVERSE_SCALE
 }
 
 const CONFIG_PROPERTIES: Array[Dictionary] = [
@@ -30,13 +28,6 @@ const CONFIG_PROPERTIES: Array[Dictionary] = [
 		"func_godot_type": PROPERTY.TRENCHBROOM_GAME_CONFIG_FOLDER
 	},
 	{
-		"name": "netradiant_custom_gamepacks_folder",
-		"usage": PROPERTY_USAGE_EDITOR,
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_GLOBAL_DIR,
-		"func_godot_type": PROPERTY.NETRADIANT_CUSTOM_GAMEPACKS_FOLDER
-	},
-	{
 		"name": "map_editor_game_path",
 		"usage": PROPERTY_USAGE_EDITOR,
 		"type": TYPE_STRING,
@@ -49,12 +40,6 @@ const CONFIG_PROPERTIES: Array[Dictionary] = [
 		"type": TYPE_STRING,
 		"func_godot_type": PROPERTY.GAME_PATH_MODELS_FOLDER
 	},
-	{
-		"name": "default_inverse_scale_factor",
-		"usage": PROPERTY_USAGE_EDITOR,
-		"type": TYPE_FLOAT,
-		"func_godot_type": PROPERTY.DEFAULT_INVERSE_SCALE
-	}
 ]
 
 const metadata_section = "addons/func_godot/local_config"
