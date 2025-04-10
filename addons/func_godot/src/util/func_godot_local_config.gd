@@ -1,8 +1,7 @@
 @tool
 @icon("res://addons/func_godot/icons/icon_godot_ranger.svg")
 ## Local machine project wide settings. Can define global defaults for some FuncGodot properties.
-## DO NOT CREATE A NEW RESOURCE! This resource works by saving a configuration file to your game's *user://* folder and pulling the properties from that config file rather than this resource.
-## Use the premade `addons/func_godot/func_godot_local_config.tres` instead.
+## This resource works by saving and loading the properties from the project metadata rather than this resource directly.
 class_name FuncGodotLocalConfig
 extends Resource
 
@@ -14,11 +13,6 @@ enum PROPERTY {
 	GAME_PATH_MODELS_FOLDER,
 	DEFAULT_INVERSE_SCALE
 }
-
-@export var export_func_godot_settings: bool: set = _save_settings
-@export var reload_func_godot_settings: bool = false :
-	set(value):
-		_load_settings()
 
 const CONFIG_PROPERTIES: Array[Dictionary] = [
 	{
@@ -63,33 +57,14 @@ const CONFIG_PROPERTIES: Array[Dictionary] = [
 	}
 ]
 
-var settings_dict: Dictionary
-var loaded := false
+const metadata_section = "addons/func_godot/local_config"
 
 static func get_setting(name: PROPERTY) -> Variant:
-	var settings = load("res://addons/func_godot/func_godot_local_config.tres")
-	if not settings.loaded: 
-		settings._load_settings()
-	return settings.settings_dict.get(PROPERTY.keys()[name], '') as Variant
-
-func _get_property_list() -> Array:
-	return CONFIG_PROPERTIES.duplicate()
-
-func _get(property: StringName) -> Variant:
-	var config = _get_config_property(property)
-	if config == null and not config is Dictionary: 
-		return null
-	_try_loading()
-	return settings_dict.get(PROPERTY.keys()[config['func_godot_type']], _get_default_value(config['type']))
-
-func _set(property: StringName, value: Variant) -> bool:
-	var config = _get_config_property(property)
-	if config == null and not config is Dictionary: 
-		return false
-	settings_dict[PROPERTY.keys()[config['func_godot_type']]] = value
-	return true
+	var config = CONFIG_PROPERTIES[name]
+	var es = EditorInterface.get_editor_settings()
+	return es.get_project_metadata(metadata_section, config['name'], _get_default_value(config['type']))
 	
-func _get_default_value(type) -> Variant:
+static func _get_default_value(type) -> Variant:
 	match type:
 		TYPE_STRING: return ''
 		TYPE_INT: return 0
@@ -108,35 +83,23 @@ func _get_config_property(name: StringName) -> Variant:
 			return config
 	return null
 
-func _load_settings() -> void:
-	loaded = true
-	var path = _get_path()
-	if not FileAccess.file_exists(path):
-		return
-	var settings = FileAccess.get_file_as_string(path)
-	settings_dict = {}
-	if not settings or settings.is_empty():
-		return
-	settings = JSON.parse_string(settings)
-	for key in settings.keys():
-		settings_dict[key] = settings[key]
-	notify_property_list_changed()
+# Property overrides
+func _get_property_list() -> Array:
+	return CONFIG_PROPERTIES.duplicate()
 
-func _try_loading() -> void:
-	if not loaded: 
-		_load_settings()
+func _get(property: StringName) -> Variant:
+	var config = _get_config_property(property)
+	if config == null and not config is Dictionary: 
+		return null
 
-func _save_settings(_s = null) -> void:
-	if settings_dict.size() == 0: 
-		return
-	var path = _get_path()
-	var file = FileAccess.open(path, FileAccess.WRITE)
-	var json = JSON.stringify(settings_dict)
-	file.store_line(json)
-	loaded = false
-	print("Saved settings to ", path)
+	var es = EditorInterface.get_editor_settings()
+	return es.get_project_metadata(metadata_section, config['name'], _get_default_value(config['type']))
 
-func _get_path() -> String:
-	var application_name: String = ProjectSettings.get('application/config/name')
-	application_name = application_name.replace(" ", "_")
-	return 'user://' + application_name  + '_FuncGodotConfig.json'
+func _set(property: StringName, value: Variant) -> bool:
+	var config = _get_config_property(property)
+	if config == null and not config is Dictionary: 
+		return false
+
+	var es = EditorInterface.get_editor_settings()
+	es.set_project_metadata(metadata_section, config['name'], value)
+	return true
